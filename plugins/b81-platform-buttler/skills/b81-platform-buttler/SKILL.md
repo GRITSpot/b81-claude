@@ -173,6 +173,44 @@ This is the migration of a `wave-*` service repo (e.g. `wave-result-service`, `w
 - [ ] Verify in staging first. ArgoCD Healthy + Synced + the workload running both web and worker. Don't decommission the legacy Pulumi-driven deployment until the ArgoCD one is proven healthy on the same env.
 - [ ] Hand off the app-repo cleanup as a separate session.
 
+**App-repo side of the migration (work in `wave-<service>` repo).** This is what you do when the user is in the app repo, not the platform repo. There are up to three phases — handle whichever the user is currently on.
+
+Reference: `wave-result-service` is the canonical migrated example. Read its `.github/workflows/` and `pulumi/index.ts` (post-migration state) before editing.
+
+**Phase 1 — Add the GitHub Actions build + promote pipeline.** Replaces the legacy `cloudbuild.yaml` (gcr.io push + direct `kubectl set image`). Without this the new ArgoCD app sits in `ImagePullBackOff` because the image only exists in the old registry.
+
+- Add `.github/workflows/build.yaml` (or equivalent) that calls `GRITSpot/b81-workflows/.github/workflows/docker-build.yaml@main`. It pushes to `europe-west3-docker.pkg.dev/b81-infra/b81-docker-registry/<service>:<sha>`.
+- Chain `gitops-promote.yaml@main` after the build. **Must** pass `target_repo: GRITSpot/b81-platform` (the workflow's default is `b81-kubernetes` — wrong for app workloads). It opens a PR in `b81-platform` bumping `wave-app.image.tag` in the relevant `argocd/deployments/<env>/<service>/values.yaml`.
+- Optionally chain `argo-sync.yaml@main` to force a sync after the promote PR merges.
+- Use `wave-result-service/.github/workflows/` as the structural template — copy the file layout and adjust the service name + image path. Don't re-derive the workflow inputs from the `b81-workflows` README; the result-service version is the working contract.
+- Delete the legacy `cloudbuild.yaml` and any `kubectl set image` / `kubectl apply` steps **only** after the new pipeline has produced an image in the new registry that ArgoCD successfully pulled in staging.
+
+**Phase 2 — Bump `wave-lib-pulumi` to `>= 2.0.13`.** Older versions of `wave-lib-pulumi` still ship the legacy `waveDeploy(...)` helpers but lack the toggles needed to cleanly disable the deployment-rendering side while keeping `waveSetSecretMap` + Pub/Sub creation alive. `2.0.13` is the floor for partial-removal mode.
+
+- Edit `pulumi/package.json` — set `"@b81/wave-lib-pulumi": "^2.0.13"` (or whatever caret bound matches the team's pinning convention; check `wave-result-service/pulumi/package.json` for the current canonical pin).
+- Run `npm install` (or `yarn` / `pnpm` per the repo's lockfile) inside `pulumi/` to refresh the lockfile.
+- Commit lockfile + `package.json` together. Conventional Commits: `chore(pulumi): bump wave-lib-pulumi to ^2.0.13 for argocd migration`.
+- Don't bundle this with the deploy-removal commit — keep the bump as its own commit so any regression is bisectable.
+
+**Phase 3 — Remove the legacy Pulumi deploy.** Only do this *after* the user confirms the new ArgoCD deployment is `Healthy + Synced` in **at least staging** (production cutover usually wants a longer soak). Until then, leaving the legacy deploy running means rollback is `git revert` on the platform repo's deployment + `pulumi up` on the app repo, not a server-side scramble.
+
+Edits in `pulumi/index.ts` (or `__main__.py` for Python services):
+
+- **Remove:**
+  - `waveSetConfigMap({ data: ... })` — the configMap now lives in `b81-platform/argocd/deployments/<env>/<service>/values.yaml` under `wave-app.configMap.data`. Cross-check the platform repo's values.yaml has the full key set before deleting here.
+  - `waveDeploy({ deploymentScript: 'web', ... })` and `waveDeploy({ deploymentScript: 'worker', ... })` — Deployments are now rendered by the `wave-app` chart.
+  - `waveCronJob(...)` calls **only** for cronjobs that have been migrated to `wave-app.cronjobs.<name>` in the platform values.yaml. Cronjobs that need a non-default image (e.g. `google/cloud-sdk` for `gcloud pubsub publish`) can't yet use `wave-app.cronjobs` — leave those calls in place and flag them for a follow-up app-code refactor.
+- **Keep:**
+  - `waveSetSecretMap(...)` / `waveSetArgoSecretMap(...)` — secrets stay owned in the app repo's Pulumi. `wave.configs: true` in the platform values.yaml auto-injects them via `envFrom`.
+  - Pub/Sub topic + subscription creation. ArgoCD doesn't manage GCP resources.
+  - Anything related to GCS bucket creation, Cloud SQL ownership, or other GCP resources the app provisions for itself.
+  - Any IAM / Workload Identity bindings the app currently owns. (New IAM that didn't exist pre-migration goes in `b81-platform/pulumi/<service>/__main__.py`, but pre-existing bindings can stay where they are unless the user explicitly wants them moved.)
+- **Stack cleanup:** the deployment stack outputs (e.g. `deploymentName`, `serviceUrl`) referenced by other consumers no longer exist. Grep for `pulumi stack output` references in the app repo's CI before removing — usually there are none, but worth checking.
+- **CI cleanup:** remove any GitHub Actions / cloudbuild steps that ran `pulumi up` against the deployment stack. The Pulumi program now only manages secrets + Pub/Sub, and those are typically applied manually or via a much narrower CI job.
+- Commit per phase: `refactor(pulumi): remove legacy waveDeploy now in argocd` + `refactor(pulumi): remove waveSetConfigMap now in argocd values`. Don't combine into one giant "rip out the deploy" commit — partial rollbacks are easier when each removal is its own commit.
+
+If the user is uncertain whether they're ready for Phase 3, ask: "Has the new ArgoCD deployment shown `Healthy + Synced` in <env> for at least one full deploy cycle?" If no, defer Phase 3 and ship Phases 1–2 first.
+
 ### "ArgoCD app isn't syncing" / "My deploy isn't showing up"
 
 Start with `b81-platform/docs/troubleshooting.md`. Most common causes: YAML formatting (run `pre-commit run --all-files` locally), missing `values.yaml`, image tag doesn't exist in the registry, or a stale `source.targetRevision` branch override left behind from testing.
