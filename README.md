@@ -10,7 +10,7 @@ A standard [Claude Code plugin marketplace](https://docs.anthropic.com/en/docs/c
 
 | Plugin | Category | Description |
 |---|---|---|
-| [`b81-platform-buttler`](plugins/b81-platform-buttler) | engineering | BEAT81 platform expert spanning b81-platform, b81-workflows, b81-kubernetes |
+| [`b81-platform-buttler`](plugins/b81-platform-buttler/README.md) | engineering | BEAT81 platform expert spanning b81-platform, b81-workflows, b81-kubernetes |
 
 Run `/plugin install <name>@b81-claude` to add any of them. Browse via `/plugin` after the marketplace is added.
 
@@ -42,10 +42,11 @@ After that, just type `/plugin` anytime to browse, install, enable, disable, or 
 2. Create a folder under `plugins/<your-plugin-name>/` with at minimum:
    ```
    plugins/<your-plugin-name>/
-   └── .claude-plugin/
-       └── plugin.json
+   ├── .claude-plugin/
+   │   └── plugin.json
+   └── README.md
    ```
-   plus whichever of `skills/`, `agents/`, `commands/`, `hooks/`, `scripts/` your plugin uses.
+   plus whichever of `skills/`, `agents/`, `commands/`, `hooks/`, `scripts/` your plugin uses. The `README.md` is required — it's where users land from the catalog and where they read about features, install, and usage.
 3. Append an entry to `.claude-plugin/marketplace.json`:
    ```json
    {
@@ -60,12 +61,13 @@ After that, just type `/plugin` anytime to browse, install, enable, disable, or 
      }
    }
    ```
-4. Validate locally:
+4. Add a row to the **Available plugins** table at the top of this README, with the plugin name linking to its `README.md` (e.g. `[\`<your-plugin-name>\`](plugins/<your-plugin-name>/README.md)`). Every plugin must appear in that index pointing at its own README.
+5. Validate locally:
    ```
    python3 scripts/validate_marketplace.py .
    python3 -m unittest discover tests -v
    ```
-5. Open a PR. CI runs the same two commands.
+6. Open a PR. CI runs the same two commands.
 
 ### Plugin name rules
 
