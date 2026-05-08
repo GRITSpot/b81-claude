@@ -44,7 +44,9 @@ There is no build step, no linter config, and no package manager — the validat
 
 ## Versioning model (V1)
 
-Every catalog entry pins `ref: "main"`. Installs always pull the latest commit on `main`; rollback is a revert PR. Don't introduce semver pinning without discussion — it's a deliberate v1 simplification.
+Every catalog entry pins `ref: "main"`. Fresh installs (`/plugin install <name>@b81-claude`) pull the latest commit on `main`; rollback is a revert PR. Don't introduce semver pinning in the catalog without discussion — it's a deliberate v1 simplification.
+
+**But existing installs are gated by the `version` field in `plugins/<name>/.claude-plugin/plugin.json`.** Claude Code's `/plugin marketplace update` only re-fetches plugin contents when this version string changes; matching the previous version short-circuits with "already at the latest version (X.Y.Z)" even when new commits exist on `main`. So **every PR that changes a plugin's content (skill prompts, commands, agents, hooks) must bump the plugin's `version`** — patch for fixes/wording, minor for new behavioral guidance or features, major for breaking changes. The catalog itself stays unversioned; only `plugin.json` moves.
 
 ## Conventions for new plugins
 
