@@ -1,0 +1,6 @@
+{
+  "name": "test-non-dict",
+  "description": "fixture",
+  "owner": { "name": "Test" },
+  "plugins": ["this-should-be-an-object", null]
+}

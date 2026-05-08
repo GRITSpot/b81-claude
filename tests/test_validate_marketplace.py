@@ -52,6 +52,18 @@ class TestValidator(unittest.TestCase):
         errors = validate_marketplace.validate(FIXTURES / "invalid_json")
         self.assertTrue(any("json" in e.lower() for e in errors), errors)
 
+    def test_non_dict_plugin(self):
+        errors = validate_marketplace.validate(FIXTURES / "non_dict_plugin")
+        self.assertTrue(any("not an object" in e for e in errors), errors)
+
+    def test_missing_name(self):
+        errors = validate_marketplace.validate(FIXTURES / "missing_name")
+        self.assertTrue(any("'name' is required" in e for e in errors), errors)
+
+    def test_missing_source(self):
+        errors = validate_marketplace.validate(FIXTURES / "missing_source")
+        self.assertTrue(any("source is required" in e for e in errors), errors)
+
 
 if __name__ == "__main__":
     unittest.main()

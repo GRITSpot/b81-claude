@@ -1,0 +1,12 @@
+{
+  "name": "test-missing-source",
+  "description": "fixture",
+  "owner": { "name": "Test" },
+  "plugins": [
+    {
+      "name": "foo",
+      "description": "no source field",
+      "category": "engineering"
+    }
+  ]
+}

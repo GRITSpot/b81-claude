@@ -1,0 +1,12 @@
+{
+  "name": "test-missing-name",
+  "description": "fixture",
+  "owner": { "name": "Test" },
+  "plugins": [
+    {
+      "description": "no name field",
+      "category": "engineering",
+      "source": { "source": "git-subdir", "url": "x", "path": "plugins/foo", "ref": "main" }
+    }
+  ]
+}

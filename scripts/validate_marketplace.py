@@ -48,7 +48,16 @@ def validate(root: Path) -> list[str]:
     referenced_paths: set[Path] = set()
 
     for i, plugin in enumerate(plugins):
-        name = plugin.get("name", f"<plugin #{i}>")
+        # Type guard.
+        if not isinstance(plugin, dict):
+            errors.append(f"plugins[{i}] is not an object")
+            continue
+
+        # Required name.
+        if "name" not in plugin:
+            errors.append(f"plugins[{i}]: 'name' is required")
+            continue
+        name = plugin["name"]
 
         # Duplicate name check.
         if name in seen_names:
@@ -62,11 +71,19 @@ def validate(root: Path) -> list[str]:
                 f"{name}: description is {len(description)} chars; max is {DESCRIPTION_MAX}"
             )
 
+        # Source object checks.
+        if "source" not in plugin:
+            errors.append(f"{name}: source is required")
+            continue
+        source = plugin["source"]
+        if not isinstance(source, dict):
+            errors.append(f"{name}: source must be an object")
+            continue
+
         # Source path checks.
-        source = plugin.get("source", {})
         path_str = source.get("path", "")
         if not path_str:
-            errors.append(f"{name}: source.path is missing")
+            errors.append(f"{name}: source.path is required")
             continue
 
         plugin_dir = root / path_str
