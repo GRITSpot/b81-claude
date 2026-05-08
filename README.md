@@ -6,6 +6,14 @@ BEAT81's internal Claude Code plugin marketplace. One repo, every BEAT81-curated
 
 A standard [Claude Code plugin marketplace](https://docs.anthropic.com/en/docs/claude-code/plugins). Once you've added it once, every BEAT81 plugin shows up in Claude's native `/plugin` UI alongside any other marketplaces you have. Install, browse, enable/disable, and remove plugins from there — there are no custom commands to learn.
 
+## Available plugins
+
+| Plugin | Category | Description |
+|---|---|---|
+| [`b81-platform-buttler`](plugins/b81-platform-buttler) | engineering | BEAT81 platform expert spanning b81-platform, b81-workflows, b81-kubernetes |
+
+Run `/plugin install <name>@b81-claude` to add any of them. Browse via `/plugin` after the marketplace is added.
+
 ## Get started
 
 **Prerequisites:**

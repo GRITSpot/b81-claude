@@ -1,0 +1,29 @@
+{
+  "skill_name": "b81-platform-buttler",
+  "evals": [
+    {
+      "id": 1,
+      "name": "promote-feedback-service-tag",
+      "prompt": "I just merged a feedback-service PR and CI built image tag 8a2bc5d. Promote it to staging. Tell me the exact file to change, the exact YAML edit, the commit message, and any rules I need to follow before pushing.",
+      "expected_output": "Routes to b81-platform. Names the exact path argocd/deployments/staging/feedback-service/values.yaml. Shows the wave-app.image.tag edit. Conventional Commits message. Mentions GPG-signed commit requirement. Does NOT touch b81-kubernetes."
+    },
+    {
+      "id": 2,
+      "name": "add-new-backend-service",
+      "prompt": "We're adding a new backend microservice called 'notification-service' to staging. It runs Python, needs a Postgres database, and consumes Pub/Sub. Walk me through what files I need to create and where, and what the values.yaml should look like.",
+      "expected_output": "Routes to b81-platform. Two-step add: argocd/applications/values.staging.yaml registration + argocd/deployments/staging/notification-service/{Chart.yaml,values.yaml}. Backend-with-worker template (configs:true, includeDatabaseProxy:true). Mentions optional Pulumi step for GCP resources. References b81-platform/docs/adding-new-service.md."
+    },
+    {
+      "id": 3,
+      "name": "bump-wave-app-chart",
+      "prompt": "I want to add HPA support for workers in the wave-app chart. Where do I make the change, what process do I follow before merging, and do I need to update anything in the platform repo at the same time?",
+      "expected_output": "Routes to b81-kubernetes/helm/charts/wave-app/. Mentions make bump-chart wave-app, CHANGELOG.md and README.md updates required, make can-i-push. Explicitly says the b81-platform Chart.yaml bump should happen in a SEPARATE PR after the chart is published. Does NOT recommend editing both repos together."
+    },
+    {
+      "id": 4,
+      "name": "list-production-services",
+      "prompt": "What services are currently running in production?",
+      "expected_output": "Does NOT recall a service list from memory or guess. Directs the user to read b81-platform/argocd/applications/values.production.yaml as the source of truth, OR reads it directly if the repo is accessible. If recalled, must caveat that the list can drift and tell the user to verify."
+    }
+  ]
+}

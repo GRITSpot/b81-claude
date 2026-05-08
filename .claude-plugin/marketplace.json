@@ -3,5 +3,17 @@
   "name": "b81-claude",
   "description": "BEAT81's internal Claude Code plugins, agents, and skills",
   "owner": { "name": "BEAT81 Engineering" },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "b81-platform-buttler",
+      "description": "BEAT81 platform expert spanning b81-platform, b81-workflows, b81-kubernetes",
+      "category": "engineering",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/GRITSpot/b81-claude.git",
+        "path": "plugins/b81-platform-buttler",
+        "ref": "main"
+      }
+    }
+  ]
 }
