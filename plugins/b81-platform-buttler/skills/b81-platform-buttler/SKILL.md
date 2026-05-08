@@ -56,29 +56,26 @@ Each of these three repos is its own Claude Code session, its own commit, its ow
 
 How to figure out the current repo: it's the git root of the working directory (`git rev-parse --show-toplevel`). If a change you're about to make would land outside that path, stop.
 
-When a follow-up in another repo is needed, end your response with a **hand-off block** containing two things:
-
-1. **What to change there** — the exact files and the specific edits, so the user (or another Claude Code session) can apply them without re-deriving the answer.
-2. **A ready-to-paste prompt** — written for a fresh Claude Code session opened in the target repo. Include enough context (what triggered the follow-up, what just shipped) that the new session doesn't have to ask questions.
-
-Template:
+When a follow-up in another repo is needed, end your response with a **hand-off block** in exactly this format — no extra prose, no "context" sections, no restated rationale:
 
 ```
 ─── Follow-up needed in <other-repo> ───
 
 Files to change there:
-- <path>: <what to change and why>
-- <path>: <what to change and why>
+- <path>: <what to change and why> (one line each)
 
 Prompt to paste in a <other-repo> Claude Code session:
 """
-<self-contained prompt — names the repo, names the trigger, names the
-specific files and edits, and references the b81-platform-buttler skill
-so that session also follows the cross-repo rules>
+Use the b81-platform-buttler skill.
+
+<2–4 sentences: what just shipped (repo + branch/PR), what version/tag is
+now available, what this session must do, what it must NOT do.>
+
+Stay in this repo only.
 """
 ```
 
-The handoff prompt should always be self-contained — assume the next session has zero context from this one. Mention which repo the user just shipped from, what version/tag is now available, and the exact files to touch. Tell that session to load this skill (`b81-platform-buttler`) so the rules carry over.
+The pasted prompt is self-contained — assume the next session has zero context. Keep it under ~10 lines; if you're writing more, you're re-deriving work the next session will redo anyway.
 
 ## Routing common requests
 
@@ -236,6 +233,27 @@ If a user (or your own draft response) does any of these, stop and reconsider:
 - Touching `argocd/bootstrap/` in `b81-kubernetes` without `@GRITSpot/tech-platform` involvement.
 - Reaching across into another repo to "finish the job" without being asked. If the work needs follow-up in `b81-platform`, `b81-kubernetes`, or `b81-workflows` other than the one the user is currently in, hand off with a paste-ready prompt rather than editing files there yourself.
 - Producing an unsigned commit in `b81-platform` after the check showed signing wasn't configured. If GPG "didn't work for some reason," fix the setup; don't bypass with `--no-verify` or `--no-gpg-sign`.
+
+## Reporting back to the user
+
+Keep completion summaries tight. The user is asking *what to do next*, not *what just happened* — lead with the action, not the recap.
+
+Required structure (in this order, omit empty sections):
+
+1. **Next step** — one line. The single thing the user should do right now (`git push`, open PR, hand off, verify in staging).
+2. **Done** — 3–5 bullets max. One line per file or logical change. Don't reproduce the full diff.
+3. **Blockers** — only if they exist. One line each: what's broken + what unblocks it.
+4. **Hand-off block** — only if cross-repo work remains. Use the template above verbatim; don't expand it with prose.
+
+Anti-patterns:
+
+- **Reproducing reference tables from this skill in the report.** The boundary-mapping table (legacy → new location) is *for you to consult while doing the work*, not to paste back. The user knows the mapping; just bullet which items moved.
+- **The same content twice in different formats** (e.g. a bullet list followed by a wide table of the same data). Pick one — bullets.
+- **"What's done" before "what's next".** Lead with the next step. Recap is supporting detail, not the headline.
+- **Meta-commentary** like "the buttler skill flagged this" or "per the cross-repo rules". Apply the rules silently; don't narrate them.
+- **Restating the user's request** before answering it.
+
+If the response is longer than ~30 lines and isn't a hand-off prompt, cut it.
 
 ## When in doubt
 
