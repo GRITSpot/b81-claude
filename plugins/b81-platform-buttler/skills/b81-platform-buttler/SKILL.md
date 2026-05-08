@@ -182,12 +182,13 @@ Reference: `wave-result-service` is the canonical migrated example. Read its `.g
 - Add `.github/workflows/build.yaml` (or equivalent) that calls `GRITSpot/b81-workflows/.github/workflows/docker-build.yaml@main`. It pushes to `europe-west3-docker.pkg.dev/b81-infra/b81-docker-registry/<service>:<sha>`.
 - Chain `gitops-promote.yaml@main` after the build. **Must** pass `target_repo: GRITSpot/b81-platform` (the workflow's default is `b81-kubernetes` — wrong for app workloads). It opens a PR in `b81-platform` bumping `wave-app.image.tag` in the relevant `argocd/deployments/<env>/<service>/values.yaml`.
 - Optionally chain `argo-sync.yaml@main` to force a sync after the promote PR merges.
+- **First-run trigger.** On the initial commit that adds this workflow, include the migration feature branch in the `on.push.branches` filter (e.g. `branches: [main, feat/ID-1353/migrate-mail-service-argo]`). Otherwise the workflow only fires on `main` pushes and you have no built image to point ArgoCD at while the migration PR is still open. After the PR merges, drop the feature-branch entry in a follow-up commit. (Note: this is the workflow's `on:` trigger — not `runs-on:`, which selects the runner.)
 - Use `wave-result-service/.github/workflows/` as the structural template — copy the file layout and adjust the service name + image path. Don't re-derive the workflow inputs from the `b81-workflows` README; the result-service version is the working contract.
 - Delete the legacy `cloudbuild.yaml` and any `kubectl set image` / `kubectl apply` steps **only** after the new pipeline has produced an image in the new registry that ArgoCD successfully pulled in staging.
 
-**Phase 2 — Bump `wave-lib-pulumi` to `>= 2.0.13`.** Older versions of `wave-lib-pulumi` still ship the legacy `waveDeploy(...)` helpers but lack the toggles needed to cleanly disable the deployment-rendering side while keeping `waveSetSecretMap` + Pub/Sub creation alive. `2.0.13` is the floor for partial-removal mode.
+**Phase 2 — Bump `@gritspot/wave-lib-pulumi` to `>= 2.0.13`.** Older versions still ship the legacy `waveDeploy(...)` helpers but lack the toggles needed to cleanly disable the deployment-rendering side while keeping `waveSetSecretMap` + Pub/Sub creation alive. `2.0.13` is the hard floor for partial-removal mode — anything below will not work.
 
-- Edit `pulumi/package.json` — set `"@b81/wave-lib-pulumi": "^2.0.13"` (or whatever caret bound matches the team's pinning convention; check `wave-result-service/pulumi/package.json` for the current canonical pin).
+- Edit `pulumi/package.json` — set `"@gritspot/wave-lib-pulumi": "^2.0.13"` (or whatever caret bound matches the team's pinning convention; check `wave-result-service/pulumi/package.json` for the current canonical pin).
 - Run `npm install` (or `yarn` / `pnpm` per the repo's lockfile) inside `pulumi/` to refresh the lockfile.
 - Commit lockfile + `package.json` together. Conventional Commits: `chore(pulumi): bump wave-lib-pulumi to ^2.0.13 for argocd migration`.
 - Don't bundle this with the deploy-removal commit — keep the bump as its own commit so any regression is bisectable.
