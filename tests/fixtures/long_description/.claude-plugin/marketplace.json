@@ -1,0 +1,20 @@
+{
+  "name": "test-long",
+  "description": "fixture",
+  "owner": {
+    "name": "Test"
+  },
+  "plugins": [
+    {
+      "name": "foo",
+      "description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "category": "engineering",
+      "source": {
+        "source": "git-subdir",
+        "url": "x",
+        "path": "plugins/foo",
+        "ref": "main"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "test-missing",
+  "description": "fixture",
+  "owner": { "name": "Test" },
+  "plugins": [
+    {
+      "name": "ghost",
+      "description": "not on disk",
+      "category": "engineering",
+      "source": { "source": "git-subdir", "url": "x", "path": "plugins/ghost", "ref": "main" }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "test-orphan",
+  "description": "fixture",
+  "owner": { "name": "Test" },
+  "plugins": []
+}

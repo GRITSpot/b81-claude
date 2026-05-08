@@ -1,0 +1,18 @@
+{
+  "name": "test-valid",
+  "description": "fixture",
+  "owner": { "name": "Test" },
+  "plugins": [
+    {
+      "name": "example",
+      "description": "an example plugin",
+      "category": "engineering",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/GRITSpot/b81-claude.git",
+        "path": "plugins/example",
+        "ref": "main"
+      }
+    }
+  ]
+}

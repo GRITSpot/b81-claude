@@ -1,0 +1,19 @@
+{
+  "name": "test-dup",
+  "description": "fixture",
+  "owner": { "name": "Test" },
+  "plugins": [
+    {
+      "name": "dup",
+      "description": "first",
+      "category": "engineering",
+      "source": { "source": "git-subdir", "url": "x", "path": "plugins/dup", "ref": "main" }
+    },
+    {
+      "name": "dup",
+      "description": "second",
+      "category": "engineering",
+      "source": { "source": "git-subdir", "url": "x", "path": "plugins/dup", "ref": "main" }
+    }
+  ]
+}
