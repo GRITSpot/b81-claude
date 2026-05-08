@@ -1,0 +1,7 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "b81-claude",
+  "description": "BEAT81's internal Claude Code plugins, agents, and skills",
+  "owner": { "name": "BEAT81 Engineering" },
+  "plugins": []
+}
