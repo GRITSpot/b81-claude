@@ -89,6 +89,8 @@ It is **`b81-kubernetes`** only if the new "app" is cluster infrastructure (e.g.
 
 If the request is ambiguous, ask one question: "Is this an application workload (admin-next/feedback-service style) or cluster infrastructure (ingress, monitoring, operators)?"
 
+**Namespaces are created by ArgoCD, not by you.** The app-of-apps + platform-apps ApplicationSets render each `Application` with `syncOptions: [CreateNamespace=true]`, so the destination namespace is auto-provisioned on first sync. Do **not** instruct the user to run `kubectl create namespace …` or `kubectl apply -f …` for namespace manifests — that's manual drift outside GitOps. If the namespace needs labels/annotations (Istio injection, Pod Security, etc.), set them on the chart's namespace template or on the `Application`'s `spec.syncPolicy.managedNamespaceMetadata`, never via an out-of-band `kubectl` call.
+
 ### "Promote an image tag" / "Deploy this SHA"
 
 **`b81-platform`**. Edit `argocd/deployments/<env>/<service>/values.yaml` under `wave-app.image.tag`. Commit with `feat(<service>): promote image tag to <sha>`. Full procedure in `b81-platform/docs/promoting-image-tags.md`.
@@ -238,6 +240,10 @@ If signing is already configured (`commit.gpgsign=true`, signing key set, recent
 
 **Conventional Commits everywhere.** Format: `type(scope): description`. Types: `feat` (new service / new env config / new CronJob / image promotion), `fix` (correcting a broken config), `chore` (maintenance, deps). Scope is the service or area (`feedback-service`, `staging`, `argocd`, `wave-app`). Description: imperative, lowercase, ≤72 chars total, no trailing period. See `b81-platform/docs/contributing.md`.
 
+**Branch names follow `<type>/ID-<number>/<short-description>`.** `<type>` reuses the Conventional Commits set (`feat`, `fix`, `chore`, `refactor`, `docs`, etc.) and reflects what the branch *does*, not the commit type of any single change inside it. `ID-<number>` is the Asana ticket ID (e.g. `ID-2333`). `<short-description>` is kebab-case, lowercase, ≤5 words. Example: `feat/ID-2333/migrate-mail-service-argo`. **If the user hasn't given you the Asana ticket ID, ask for it before creating the branch** — don't invent a placeholder or skip the `ID-…` segment. The only exception is one-off chores with no ticket (e.g. `chore/bump-pre-commit-hooks`), and even then prefer to ask first.
+
+**PR titles follow `[ID-XXXX] <Title>`.** The Asana ticket ID in brackets comes first, then a space, then the human-readable title (sentence case, no trailing period, descriptive of the change). Example: `[ID-2333] Migrate mail-service to ArgoCD`. The commit message inside the PR still follows Conventional Commits (`feat(mail-service): migrate to argocd`); the bracketed title is for the PR only. If the user hasn't supplied the ticket ID, ask before opening the PR.
+
 **Pre-commit must pass before push.**
 - `b81-platform`: `pre-commit run --all-files`
 - `b81-kubernetes`: `make can-i-push` (runs version checks + validator + pre-commit)
@@ -270,6 +276,7 @@ If a user (or your own draft response) does any of these, stop and reconsider:
 - Adding a service to `argocd/applications/values.<env>.yaml` without creating the corresponding `argocd/deployments/<env>/<service>/` directory (or vice versa) — both are required and the orphan check on the platform repo / ArgoCD will surface the inconsistency.
 - Hand-editing `Pulumi.<env>.yaml` files immediately after creating a Pulumi program. Let the `pulumi-stack-init` CI workflow generate them on the initial commit (use `SKIP=pulumi-stack-configs-present` to bypass the pre-commit count check on that one commit only).
 - Touching `argocd/bootstrap/` in `b81-kubernetes` without `@GRITSpot/tech-platform` involvement.
+- Telling the user to run `kubectl create namespace …` (or any `kubectl apply` for a namespace) when adding a new service. ArgoCD's `CreateNamespace=true` syncOption handles it on first sync — instructing manual `kubectl` creates drift that the next sync will not reconcile.
 - Reaching across into another repo to "finish the job" without being asked. If the work needs follow-up in `b81-platform`, `b81-kubernetes`, or `b81-workflows` other than the one the user is currently in, hand off with a paste-ready prompt rather than editing files there yourself.
 - Producing an unsigned commit in `b81-platform` after the check showed signing wasn't configured. If GPG "didn't work for some reason," fix the setup; don't bypass with `--no-verify` or `--no-gpg-sign`.
 
